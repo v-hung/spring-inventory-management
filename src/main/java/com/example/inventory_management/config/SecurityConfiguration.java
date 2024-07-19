@@ -9,6 +9,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,7 +19,8 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 @EnableMethodSecurity()
 @RequiredArgsConstructor
-public class SecurityConfiguration {
+@EnableWebMvc
+public class SecurityConfiguration implements WebMvcConfigurer {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -27,12 +31,25 @@ public class SecurityConfiguration {
     return http
       .csrf(csrf -> csrf.disable())
       .authorizeHttpRequests(auth -> auth
-        .requestMatchers("/api/auth/current").authenticated()
+        .requestMatchers("/api/auth/current", "/dashboard").authenticated()
         .anyRequest().permitAll()
       )
       .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
       .authenticationProvider(authenticationProvider)
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+      .formLogin(formLogin -> formLogin
+        .loginPage("/login")
+        .permitAll()
+      )
+      .exceptionHandling(exception -> exception
+        .accessDeniedPage("/access-denied")
+      )
       .build();
+  }
+
+  @Override
+  public void addResourceHandlers(@SuppressWarnings("null") final ResourceHandlerRegistry registry) {
+    registry.addResourceHandler("/public/**")
+      .addResourceLocations("classpath:/static/");
   }
 }

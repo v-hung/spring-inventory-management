@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -30,6 +31,9 @@ public class JwtService {
   @Value("${spring.application.security.jwt.refresh-token.expiration}")
   private long refreshExpiration;
 
+  @Value("${spring.application.security.jwt.refresh-token.expirationRemember}")
+  private long refreshExpirationRemember;
+
   public String extractUsername(String token) {
     return extractClaim(token, Claims::getSubject);
   }
@@ -44,14 +48,18 @@ public class JwtService {
   }
 
   public String generateToken(
-      Map<String, Object> extraClaims,
-      UserDetails userDetails) {
+    Map<String, Object> extraClaims,
+    UserDetails userDetails
+  ) {
     return buildToken(extraClaims, userDetails, jwtExpiration);
   }
 
-  public String generateRefreshToken(
-      UserDetails userDetails) {
+  public String generateRefreshToken(UserDetails userDetails ) {
     return buildToken(new HashMap<>(), userDetails, refreshExpiration);
+  }
+
+  public String generateRefreshToken(UserDetails userDetails, boolean remember) {
+    return buildToken(new HashMap<>(), userDetails, remember ? refreshExpirationRemember : refreshExpiration);
   }
 
   private String buildToken(
@@ -96,11 +104,27 @@ public class JwtService {
     return Keys.hmacShaKeyFor(keyBytes);
   }
 
-  public Date getRefreshExpirationToDate() {
-    return new Date(System.currentTimeMillis() + refreshExpiration);
+  public Date getRefreshExpirationToDate(boolean remember) {
+    return new Date(System.currentTimeMillis() + (remember ? refreshExpirationRemember : refreshExpiration));
   }
 
-  public LocalDateTime getRefreshExpirationToLocalDate() {
-    return LocalDateTime.ofInstant(getRefreshExpirationToDate().toInstant(), ZoneId.systemDefault());
+  public LocalDateTime getRefreshExpirationToLocalDate(boolean remember) {
+    return LocalDateTime.ofInstant(getRefreshExpirationToDate(remember).toInstant(), ZoneId.systemDefault());
+  }
+
+  public Cookie generateTokenCookie(String token) {
+    return new Cookie("token", token) {{
+      setHttpOnly(true);
+      setPath("/");
+      setMaxAge((int)jwtExpiration);
+    }};
+  }
+
+  public Cookie generateRefreshTokenCookie(String refreshToken, boolean remember) {
+    return new Cookie("refreshToken", refreshToken) {{
+      setHttpOnly(true);
+      setPath("/");
+      setMaxAge((int)(remember ? refreshExpirationRemember : refreshExpiration));
+    }};
   }
 }

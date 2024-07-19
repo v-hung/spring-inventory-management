@@ -46,7 +46,7 @@ public class User implements UserDetails {
   private Role role;
 
   @OneToMany
-  private List<Token> tokens;
+  private List<DeviceMetadata> devices;
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {

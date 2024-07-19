@@ -23,6 +23,5 @@ public class UserDto {
 
   private String email;
 
-  // @Enumerated(EnumType.STRING)
   private String role;
 }

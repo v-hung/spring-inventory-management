@@ -13,5 +13,10 @@
     "name": "spring.application.security.jwt.refresh-token.expiration",
     "type": "java.lang.long",
     "description": "A description for 'spring.application.security.jwt.refresh-token.expiration'"
+  },
+  {
+    "name": "spring.application.security.jwt.refresh-token.expirationRemember",
+    "type": "java.lang.long",
+    "description": "A description for 'spring.application.security.jwt.refresh-token.expirationRemember'"
   }
 ]}

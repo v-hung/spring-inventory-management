@@ -1,6 +1,5 @@
-package com.example.inventory_management.controller;
+package com.example.inventory_management.controller.api;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,16 +20,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.inventory_management.dto.UserDto;
 import com.example.inventory_management.model.auth.Role;
-import com.example.inventory_management.model.auth.Token;
 import com.example.inventory_management.model.auth.User;
-import com.example.inventory_management.repository.TokenRepository;
 import com.example.inventory_management.repository.UserRepository;
 import com.example.inventory_management.request.LoginRequest;
 import com.example.inventory_management.request.LogoutRequest;
 import com.example.inventory_management.request.RegisterRequest;
 import com.example.inventory_management.response.LoginResponse;
+import com.example.inventory_management.service.DeviceMetadataService;
 import com.example.inventory_management.service.JwtService;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -42,14 +42,15 @@ public class AuthController {
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final AuthenticationManager authenticationManager;
-  private final TokenRepository tokenRepository;
   private final ModelMapper modelMapper;
+  private final DeviceMetadataService deviceMetadataService;
 
   @PostMapping("/register")
   public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
     if (!userRepository.findByEmail(request.getEmail()).isEmpty()) {
       return ResponseEntity.status(400).body("Email đã tồn tại");
     }
+
     var user = User.builder()
       .name(request.getName())
       .email(request.getEmail())
@@ -63,7 +64,11 @@ public class AuthController {
   }
 
   @PostMapping("/login")
-  public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+  public ResponseEntity<LoginResponse> login(
+    @RequestBody LoginRequest request, 
+    HttpServletRequest servletRequest, 
+    HttpServletResponse servletResponse
+  ) {
     authenticationManager.authenticate(
       new UsernamePasswordAuthenticationToken(
         request.getEmail(),
@@ -71,30 +76,38 @@ public class AuthController {
       )
     );
 
-    var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+    var user = userRepository.findByEmail(request.getEmail()).orElseThrow(
+      () -> new RuntimeException("User is not found")
+    );
     var token = jwtService.generateToken(user);
     
-    var refreshTokenInDb = tokenRepository.findByExpiryTimeAfter(LocalDateTime.now()).orElse(null);
+    // delete all refreshToken is expired
+    deviceMetadataService.deleteByExpiryTimeExpired(user);
 
-    var refreshToken = refreshTokenInDb != null ? refreshTokenInDb.getRefreshToken() : jwtService.generateRefreshToken(user);
+    // find refreshToken 
+    var deviceMetadataDb = deviceMetadataService.findDeviceMetadataByUser(servletRequest, user);
 
-    if (refreshTokenInDb == null) {
-      var tokenDb = Token.builder()
-        .refreshToken(refreshToken)
-        .expiryTime(jwtService.getRefreshExpirationToLocalDate())
-        .build();
-  
-      tokenRepository.save(tokenDb);
+    var refreshToken = deviceMetadataDb != null ? deviceMetadataDb.getRefreshToken() : jwtService.generateRefreshToken(user, request.isRemember());
+
+    if (deviceMetadataDb == null) {
+      deviceMetadataService.createDeviceMetadataForUser(
+        servletRequest, user, refreshToken,
+        jwtService.getRefreshExpirationToLocalDate(request.isRemember())
+      );
     }
 
     LoginResponse response = new LoginResponse(modelMapper.map(user, UserDto.class), token, refreshToken);
+
+    // set Cookie token and refreshToken for Login
+    servletResponse.addCookie(jwtService.generateTokenCookie(token));
+    servletResponse.addCookie(jwtService.generateRefreshTokenCookie(refreshToken, request.isRemember()));
 
     return ResponseEntity.ok(response);
   }
 
   @PostMapping("/logout")
   public ResponseEntity<String> logout(@RequestBody LogoutRequest request) {
-    tokenRepository.deleteByRefreshToken(request.getRefreshToken());
+    deviceMetadataService.deleteByRefreshToken(request.getRefreshToken());
 
     SecurityContextHolder.clearContext();
 
@@ -104,6 +117,7 @@ public class AuthController {
   @GetMapping("/current")
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<UserDto> currentUser() {
+    
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
@@ -114,9 +128,7 @@ public class AuthController {
 
   @PostMapping("/refresh-token")
   public ResponseEntity<?> refreshToken(@RequestBody LogoutRequest request) {
-    tokenRepository.findByRefreshToken(request.getRefreshToken()).orElseThrow(
-      () -> new RuntimeException("RefreshToken is not found")
-    );
+    deviceMetadataService.findByRefreshToken(request.getRefreshToken());
 
     final String userEmail = jwtService.extractUsername(request.getRefreshToken());
     

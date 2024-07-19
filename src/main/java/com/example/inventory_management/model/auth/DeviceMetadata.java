@@ -20,12 +20,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "tokens")
-public class Token {
-  
+@Table(name = "deviceMetadata")
+public class DeviceMetadata {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Integer id;
+
+  private String ip;
+
+  private String userAgent;
+
+  private String device;
+
+  private String os;
+
+  private LocalDateTime lastLoggedIn;
 
   @NotBlank
   private String refreshToken;

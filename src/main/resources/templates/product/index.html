@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <th:block th:insert="~{common/header::head(title = 'Document')}"></th:block>
+</head>
+<body>
+  <th:block th:insert="~{common/message::info}"></th:block>
+
+  <form th:object="${indexForm}" method="post" th:action="@{/}" class="container py-4">
+    <button type="submit" class="sr-only"></button>
+    
+    <p th:text="*{a}"></p>
+    <!-- <input type="text" th:field="*{a}"> -->
+
+    <button type="button" class="btn btn-primary" th:formaction="@{/product/product_02}">Minus</button>
+    <button type="button" class="btn btn-primary" th:formaction="@{/product/product_03}">Plus</button>
+  </form>
+
+  <th:block th:insert="~{common/footer::footer}"></th:block>
+
+  <th:block th:insert="~{common/footer::scripts}"></th:block>
+</body>
+</html>

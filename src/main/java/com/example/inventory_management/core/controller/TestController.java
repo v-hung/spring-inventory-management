@@ -1,4 +1,4 @@
-package com.example.inventory_management.controller;
+package com.example.inventory_management.core.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

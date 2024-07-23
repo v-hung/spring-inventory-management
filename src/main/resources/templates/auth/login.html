@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <th:block th:insert="~{common/header::head(title = 'Document')}"></th:block>
+</head>
+<body>
+  <th:block th:insert="~{common/message::info}"></th:block>
+
+  <form th:object="${loginForm}" method="post" th:action="@{/}" class="container py-4">
+    <button type="submit" class="sr-only"></button>
+    <div class="d-flex justify-content-center">
+      <div class="w-100" style="max-width: 400px;">
+        <div class="mb-3">
+          <label class="form-label">Tài khoản</label>
+          <input type="email" class="form-control" th:field="*{email}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Mật khẩu</label>
+          <input type="password" class="form-control" th:field="*{password}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Id chức năng</label>
+          <input type="text" class="form-control" th:field="*{functionId}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Id màn hình</label>
+          <input type="text" class="form-control" th:field="*{eventId}">
+        </div>
+        <button type="button" class="btn btn-primary" th:formaction="@{/auth/login_03}">Tiếp tục</button>
+      </div>
+    </div>
+  </form>
+
+  <th:block th:insert="~{common/footer::footer}"></th:block>
+
+  <th:block th:insert="~{common/footer::scripts}"></th:block>
+</body>
+</html>

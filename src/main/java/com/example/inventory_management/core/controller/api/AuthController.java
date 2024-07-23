@@ -1,4 +1,4 @@
-package com.example.inventory_management.controller.api;
+package com.example.inventory_management.core.controller.api;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +55,6 @@ public class AuthController {
       .name(request.getName())
       .email(request.getEmail())
       .password(passwordEncoder.encode(request.getPassword()))
-      .role(Role.USER)
       .build();
 
     userRepository.save(user);

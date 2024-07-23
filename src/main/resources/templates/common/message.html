@@ -1,0 +1,7 @@
+<th:block th:fragment="info">
+  <section style="background-color: rgb(201, 114, 114);">
+    <ul th:each="message, status : ${info.getMessageHolderBean().getErrorMessages()}">
+      <li th:text="*{message.getFieldName()} + ': ' + *{message.getMessage()}"></li>
+    </ul>
+  </section>
+</th:block>

@@ -10,8 +10,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import com.example.inventory_management.core.servlet.TransitionInterceptor;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,7 +41,7 @@ public class SecurityConfiguration implements WebMvcConfigurer {
       .authenticationProvider(authenticationProvider)
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
       .formLogin(formLogin -> formLogin
-        .loginPage("/login")
+        .loginPage("/auth/login")
         .permitAll()
       )
       .exceptionHandling(exception -> exception
@@ -51,5 +54,10 @@ public class SecurityConfiguration implements WebMvcConfigurer {
   public void addResourceHandlers(@SuppressWarnings("null") final ResourceHandlerRegistry registry) {
     registry.addResourceHandler("/public/**")
       .addResourceLocations("classpath:/static/");
+  }
+
+  @Override
+  public void addInterceptors(@SuppressWarnings("null") InterceptorRegistry registry) {
+    registry.addInterceptor(new TransitionInterceptor());
   }
 }

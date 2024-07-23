@@ -1,7 +1,10 @@
 package com.example.inventory_management.model.auth;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,6 +16,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
@@ -42,15 +46,20 @@ public class User implements UserDetails {
 
   private String password;
 
-  @Enumerated(EnumType.STRING)
-  private Role role;
+  @ManyToMany
+  private Set<Role> roles;
 
   @OneToMany
   private List<DeviceMetadata> devices;
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return List.of(new SimpleGrantedAuthority(role.name()));
+    Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
+    for (Role role : roles){
+      grantedAuthorities.add(new SimpleGrantedAuthority(role.getName()));
+    }
+
+    return grantedAuthorities;
   }
 
   @Override
